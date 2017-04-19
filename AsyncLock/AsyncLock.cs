@@ -26,7 +26,7 @@ namespace NeoSmart
          * Here's an example where the thread id is the same but locks should block:
         */
 
-        public class ThreadIdConflict
+        private class ThreadIdConflict
         {
             AsyncLock _lock = new AsyncLock();
 
@@ -90,7 +90,7 @@ namespace NeoSmart
             }
         }
 
-        public class StackTraceConflict
+        private class StackTraceConflict
         {
             AsyncLock _lock = new AsyncLock();
 
