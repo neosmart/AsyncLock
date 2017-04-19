@@ -1,0 +1,7 @@
+* text=auto
+
+*.sln        text eol=crlf
+*.vcxproj    text eol=crlf
+*.filters    text eol=crlf
+*.cpp        diff=csharp eol=crlf
+
