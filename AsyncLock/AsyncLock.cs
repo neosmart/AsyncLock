@@ -16,9 +16,11 @@ namespace NeoSmart
         internal SemaphoreSlim _retry = new SemaphoreSlim(0, 1);
         //We do not have System.Threading.Thread.* on .NET Standard without additional dependencies
         //Work around is easy: create a new ThreadLocal<T> with a random value and this is our thread id :)
-        internal Guid _owningId = Guid.Empty;
-        private static readonly ThreadLocal<Guid> _threadId = new ThreadLocal<Guid>(Guid.NewGuid);
-        public static Guid ThreadId => _threadId.Value; //public so anyone that needs a thread id can use this
+        private static readonly long UnlockedThreadId = 0; //"owning" thread id when unlocked
+        internal long _owningId = UnlockedThreadId;
+        private static long _globalThreadCounter;
+        private static readonly ThreadLocal<long> _threadId = new ThreadLocal<long>(() => Interlocked.Increment(ref _globalThreadCounter));
+        public static long ThreadId => _threadId.Value; //public so anyone that needs a thread id can use this
 
         /*
          * We use two things to determine reentrancy: the caller's stack trace and the thread id
@@ -172,8 +174,8 @@ namespace NeoSmart
             {
                 lock (_parent._reentrancy)
                 {
-                    Debug.Assert((_parent._owningId == Guid.Empty) == (_parent._reentrancy.Count == 0));
-                    if (_parent._owningId != Guid.Empty && _parent._owningId != AsyncLock.ThreadId)
+                    Debug.Assert((_parent._owningId == UnlockedThreadId) == (_parent._reentrancy.Count == 0));
+                    if (_parent._owningId != UnlockedThreadId && _parent._owningId != AsyncLock.ThreadId)
                     {
                         //another thread currently owns the lock
                         return false;
@@ -206,7 +208,7 @@ namespace NeoSmart
                     {
                         //the owning thread is always the same so long as we are in a nested stack call
                         //we reset the owning id to null only when the lock is fully unlocked
-                        _parent._owningId = Guid.Empty;
+                        _parent._owningId = UnlockedThreadId;
                     }
                     if (_parent._retry.CurrentCount == 0)
                     {
