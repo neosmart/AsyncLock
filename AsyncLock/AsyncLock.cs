@@ -13,12 +13,11 @@ namespace NeoSmart
         //We are using this SemaphoreSlim like a posix condition variable
         //we only want to wake waiters, one or more of whom will try to obtain a different lock to do their thing
         //so long as we can guarantee no wakes are missed, the number of awakees is not important
-        //If AutoResetEvent had WaitAsync we could use that instead
         internal SemaphoreSlim _retry = new SemaphoreSlim(0, 1);
         //We do not have System.Threading.Thread.* on .NET Standard without additional dependencies
         //Work around is easy: create a new ThreadLocal<T> with a random value and this is our thread id :)
         internal Guid _owningId = Guid.Empty;
-        private static ThreadLocal<Guid> _threadId = new ThreadLocal<Guid>(() => Guid.NewGuid());
+        private static readonly ThreadLocal<Guid> _threadId = new ThreadLocal<Guid>(Guid.NewGuid);
         public static Guid ThreadId => _threadId.Value; //public so anyone that needs a thread id can use this
 
         /*
