@@ -13,6 +13,7 @@ namespace NeoSmart
         //We are using this SemaphoreSlim like a posix condition variable
         //we only want to wake waiters, one or more of whom will try to obtain a different lock to do their thing
         //so long as we can guarantee no wakes are missed, the number of awakees is not important
+        //ideally, this would be "friend" for access only from InnerLock, but whatever.
         internal SemaphoreSlim _retry = new SemaphoreSlim(0, 1);
         //We do not have System.Threading.Thread.* on .NET Standard without additional dependencies
         //Work around is easy: create a new ThreadLocal<T> with a random value and this is our thread id :)
@@ -116,21 +117,19 @@ namespace NeoSmart
          * It would be horribly wrong to let them bypass the lock.
         */
         
-        public class InnerLock : IDisposable
+        public struct InnerLock : IDisposable
         {
-            private AsyncLock _parent = null;
+            private readonly AsyncLock _parent;
 #if DEBUG
-            private bool _disposed = false;
+            private bool _disposed;
 #endif
-
-            public InnerLock()
-            {
-                throw new Exception("InnerLock cannot be instantiated directly!");
-            }
 
             internal InnerLock(AsyncLock parent)
             {
                 _parent = parent;
+#if DEBUG
+                _disposed = false;
+#endif
             }
 
             internal async Task ObtainLockAsync()
