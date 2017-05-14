@@ -149,13 +149,22 @@ namespace NeoSmart
                     _parent._retry.Wait();
                 }
             }
-
+            
             private string CleanedStackTrace
             {
                 get
                 {
                     //find last instance of NeoSmart.AsyncLock to get stack trace prior to that
-                    var sTrace = Environment.StackTrace.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                    var sTrace = Environment.StackTrace.Split(new[] {'\n', '\r'}, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s =>
+                        {
+                            var inIndex = s.IndexOf(" in ");
+                            if (inIndex != -1)
+                            {
+                                return s.Substring(0, inIndex);
+                            }
+                            return s;
+                        }).ToList();
 
                     int skip = 0;
                     for (int i = 0; i < sTrace.Count; ++i)
