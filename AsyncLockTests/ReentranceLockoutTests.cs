@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NeoSmart;
+using NeoSmart.AsyncLock;
 
 namespace AsyncLockTests
 {
@@ -130,10 +130,9 @@ namespace AsyncLockTests
 
             var testCount = 20;
             _countdown = new CountdownEvent(testCount);
-            var tasks = new List<Task>();
             for (int i = 0; i < testCount; ++i)
             {
-                var t = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     using (await _lock.LockAsync())
                     {
@@ -143,7 +142,6 @@ namespace AsyncLockTests
                     }
                     _countdown.Tick();
                 });
-                tasks.Add(t);
             }
 
             //MSTest does not support async test methods (apparently, but I could be wrong)

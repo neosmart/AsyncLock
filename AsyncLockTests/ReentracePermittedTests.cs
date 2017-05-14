@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NeoSmart;
+using NeoSmart.AsyncLock;
 
 namespace AsyncLockTests
 {

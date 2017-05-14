@@ -2,7 +2,21 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
-    <RootNamespace>NeoSmart</RootNamespace>
+    <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
+    <AssemblyName>NeoSmart.AsyncLock</AssemblyName>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>0.1</Version>
+    <Authors>NeoSmart Technologies, Mahmoud Al-Qudsi</Authors>
+    <Company>NeoSmart Technologies</Company>
+    <Product>NeoSmart.AsyncLock</Product>
+    <Description>A C# lock replacement for async/await, supporting recursion/re-entrance and asynchronous waits.</Description>
+    <Copyright>Copyright NeoSmart Technologies 2017</Copyright>
+    <PackageLicenseUrl>https://cdn.rawgit.com/neosmart/AsyncLock/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/neosmart/AsyncLock</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/neosmart/AsyncLock</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>asynclock, async await, async, await, lock, synchronization</PackageTags>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

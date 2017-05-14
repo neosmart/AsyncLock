@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NeoSmart
+namespace NeoSmart.AsyncLock
 {
     public class AsyncLock
     {

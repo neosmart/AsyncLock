@@ -60,7 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AsyncLock\AsyncLock.csproj">
-      <Project>{077768A9-D1A4-48BB-8ECF-C66D50E47396}</Project>
+      <Project>{077768a9-d1a4-48bb-8ecf-c66d50e47396}</Project>
       <Name>AsyncLock</Name>
     </ProjectReference>
   </ItemGroup>
