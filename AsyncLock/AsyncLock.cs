@@ -188,7 +188,7 @@ namespace NeoSmart
                         //another thread currently owns the lock
                         return false;
                     }
-                    if (_parent._reentrancy.Count == 0 || _parent._reentrancy.Peek().EndsWith(CleanedStackTrace))
+                    if (_parent._reentrancy.Count == 0 || CleanedStackTrace.EndsWith(_parent._reentrancy.Peek()))
                     {
                         //we can go in
                         _parent._owningId = AsyncLock.ThreadId;
