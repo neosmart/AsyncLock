@@ -35,9 +35,10 @@ namespace AsyncLockTests
         {
             _lock = new AsyncLock();
             //start n threads and have them obtain the lock and randomly wait, then verify
+            bool failure = false;
             _resource = new LimitedResource(() =>
             {
-                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+                failure = true;
             });
 
             var testCount = 20;
@@ -49,6 +50,10 @@ namespace AsyncLockTests
             }
 
             _countdown.Wait();
+            if (failure)
+            {
+                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+            }
         }
 
         /// <summary>
@@ -59,9 +64,10 @@ namespace AsyncLockTests
         {
             _lock = new AsyncLock();
             //start n threads and have them obtain the lock and randomly wait, then verify
+            bool failure = false;
             _resource = new LimitedResource(() =>
             {
-                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+                failure = true;
             });
 
             var testCount = 20;
@@ -82,6 +88,10 @@ namespace AsyncLockTests
             }
 
             _countdown.Wait();
+            if (failure)
+            {
+                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+            }
         }
 
         /// <summary>
@@ -92,9 +102,10 @@ namespace AsyncLockTests
         {
             _lock = new AsyncLock();
             //start n threads and have them obtain the lock and randomly wait, then verify
+            bool failure = false;
             _resource = new LimitedResource(() =>
             {
-                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+                failure = true;
             });
 
             ThreadStart work = () =>
@@ -117,6 +128,10 @@ namespace AsyncLockTests
             }
 
             _countdown.Wait();
+            if (failure)
+            {
+                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+            }
         }
 
         [TestMethod]
@@ -124,9 +139,10 @@ namespace AsyncLockTests
         {
             _lock = new AsyncLock();
             //start n threads and have them obtain the lock and randomly wait, then verify
+            bool failure = false;
             _resource = new LimitedResource(() =>
             {
-                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+                failure = true;
             });
 
             var testCount = 20;
@@ -148,6 +164,10 @@ namespace AsyncLockTests
             //MSTest does not support async test methods (apparently, but I could be wrong)
             //await Task.WhenAll(tasks);
             _countdown.Wait();
+            if (failure)
+            {
+                Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
+            }
         }
 
         [TestMethod]
