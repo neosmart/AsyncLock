@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeoSmart.AsyncLock;
+using NeoSmart.Synchronization;
 
 namespace AsyncLockTests
 {
@@ -23,7 +24,7 @@ namespace AsyncLockTests
                 Thread.Sleep(new Random().Next(0, 10) * 10);
                 _resource.EndSomethingDangerous();
             }
-            _countdown.Tick();
+            _countdown.Signal();
         }
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace AsyncLockTests
                 t.Start();
             }
 
-            _countdown.WaitOne();
+            _countdown.Wait();
         }
 
         /// <summary>
@@ -75,12 +76,12 @@ namespace AsyncLockTests
                         Thread.Sleep(new Random().Next(0, 10) * 10);
                         _resource.EndSomethingDangerous();
                     }
-                    _countdown.Tick();
+                    _countdown.Signal();
                 });
                 t.Start();
             }
 
-            _countdown.WaitOne();
+            _countdown.Wait();
         }
 
         /// <summary>
@@ -104,7 +105,7 @@ namespace AsyncLockTests
                     Thread.Sleep(new Random().Next(0, 10) * 10);
                     _resource.EndSomethingDangerous();
                 }
-                _countdown.Tick();
+                _countdown.Signal();
             };
 
             var testCount = 20;
@@ -115,7 +116,7 @@ namespace AsyncLockTests
                 t.Start();
             }
 
-            _countdown.WaitOne();
+            _countdown.Wait();
         }
 
         [TestMethod]
@@ -140,13 +141,13 @@ namespace AsyncLockTests
                         Thread.Sleep(new Random().Next(0, 10) * 10);
                         _resource.EndSomethingDangerous();
                     }
-                    _countdown.Tick();
+                    _countdown.Signal();
                 });
             }
 
             //MSTest does not support async test methods (apparently, but I could be wrong)
             //await Task.WhenAll(tasks);
-            _countdown.WaitOne();
+            _countdown.Wait();
         }
 
         [TestMethod]
