@@ -23,9 +23,10 @@ namespace NeoSmart.AsyncLock
         //Work around is easy: create a new ThreadLocal<T> with a random value and this is our thread id :)
         private static readonly long UnlockedThreadId = 0; //"owning" thread id when unlocked
         internal long _owningId = UnlockedThreadId;
-        private static long _globalThreadCounter;
-        private static readonly ThreadLocal<long> _threadId = new ThreadLocal<long>(() => Interlocked.Increment(ref _globalThreadCounter));
-        public static long ThreadId => _threadId.Value; //public so anyone that needs a thread id can use this
+        private static int _globalThreadCounter;
+        private static readonly ThreadLocal<int> _threadId = new ThreadLocal<int>(() => Interlocked.Increment(ref _globalThreadCounter));
+        //We generate a unique id from the thread ID combined with the task ID, if any
+        public static long ThreadId => (long) (((ulong)_threadId.Value) << 32) | ((uint)(Task.CurrentId ?? 0));
 
         /*
          * We use two things to determine reentrancy: the caller's stack trace and the thread id
