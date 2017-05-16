@@ -9,7 +9,11 @@ namespace NeoSmart.AsyncLock
 {
     public class AsyncLock
     {
-        private readonly Stack<string> _reentrancy = new Stack<string>();
+#if NETSTANDARD1_3
+        private readonly Stack<List<string>> _reentrancy = new Stack<List<string>>();
+#else
+        private readonly Stack<List<System.Reflection.MethodBase>> _reentrancy = new Stack<List<System.Reflection.MethodBase>>();
+#endif
         //We are using this SemaphoreSlim like a posix condition variable
         //we only want to wake waiters, one or more of whom will try to obtain a different lock to do their thing
         //so long as we can guarantee no wakes are missed, the number of awakees is not important
@@ -149,8 +153,9 @@ namespace NeoSmart.AsyncLock
                     _parent._retry.Wait();
                 }
             }
-            
-            private string CleanedStackTrace
+
+#if NETSTANDARD1_3
+            private List<string> CleanedStackTrace
             {
                 get
                 {
@@ -174,8 +179,39 @@ namespace NeoSmart.AsyncLock
                             skip = i + 1;
                         }
                     }
-                    return sTrace.Skip(skip).Aggregate("", (one, all) => all = $"{one}\n{all}");
+                    var trace = sTrace.Skip(skip);
+                    return trace.ToList();
                 }
+            }
+#else
+            private List<System.Reflection.MethodBase> CleanedStackTrace
+            {
+                get
+                {
+                    var trace = new StackTrace(false).GetFrames().Select(f => f.GetMethod());
+                    var thisAssembly = trace.First().Module;
+                    trace = trace.Where(m => m.Module != thisAssembly);
+                    return trace.ToList();
+                }
+            }
+#endif
+
+            private bool IsStackChild<T>(List<T> parentTrace, List<T> possibleChildTrace) where T: class
+            {
+                if (parentTrace.Count > possibleChildTrace.Count)
+                {
+                    return false;
+                }
+
+                for (int i = 1; i <= parentTrace.Count; ++i)
+                {
+                    if (!EqualityComparer<T>.Default.Equals(possibleChildTrace[possibleChildTrace.Count - i], parentTrace[parentTrace.Count - i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             private bool TryEnter()
@@ -188,7 +224,7 @@ namespace NeoSmart.AsyncLock
                         //another thread currently owns the lock
                         return false;
                     }
-                    if (_parent._reentrancy.Count == 0 || CleanedStackTrace.EndsWith(_parent._reentrancy.Peek()))
+                    if (_parent._reentrancy.Count == 0 || IsStackChild(_parent._reentrancy.Peek(), CleanedStackTrace))
                     {
                         //we can go in
                         _parent._owningId = AsyncLock.ThreadId;

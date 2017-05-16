@@ -19,4 +19,11 @@
     <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+    <PackageReference Include="System.Reflection" Version="4.3.0"/>
+    <PackageReference Include="System.Diagnostics.StackTrace">
+      <Version>4.3.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
