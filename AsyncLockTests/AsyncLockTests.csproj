@@ -53,6 +53,7 @@
     <Compile Include="ReentranceLockoutTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TaskWaiter.cs" />
+    <Compile Include="AsyncIdTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
