@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncLock", "AsyncLock\AsyncLock.csproj", "{077768A9-D1A4-48BB-8ECF-C66D50E47396}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncLockTestsCore", "AsyncLockTestsCore\AsyncLockTestsCore.csproj", "{12BC1A2B-9A5B-4142-8E71-A99063B46B12}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncLockTests", "AsyncLockTests\AsyncLockTests.csproj", "{766FE30B-F6BF-4A69-B016-B02E56668674}"
 EndProject
 Global
@@ -19,10 +17,6 @@ Global
 		{077768A9-D1A4-48BB-8ECF-C66D50E47396}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{077768A9-D1A4-48BB-8ECF-C66D50E47396}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{077768A9-D1A4-48BB-8ECF-C66D50E47396}.Release|Any CPU.Build.0 = Release|Any CPU
-		{12BC1A2B-9A5B-4142-8E71-A99063B46B12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{12BC1A2B-9A5B-4142-8E71-A99063B46B12}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{12BC1A2B-9A5B-4142-8E71-A99063B46B12}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{12BC1A2B-9A5B-4142-8E71-A99063B46B12}.Release|Any CPU.Build.0 = Release|Any CPU
 		{766FE30B-F6BF-4A69-B016-B02E56668674}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{766FE30B-F6BF-4A69-B016-B02E56668674}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{766FE30B-F6BF-4A69-B016-B02E56668674}.Release|Any CPU.ActiveCfg = Release|Any CPU
