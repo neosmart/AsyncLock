@@ -8,7 +8,7 @@ lock (_lockObject)
   await DoSomething();
 }
 ```
-Unlike most other so-called "async locks" for C#, AsyncLock is actually designed to support the programming paradigm `lock` encourages, not just the technical elements. You can read more about the pitfalls with other so-called asynchronous locks and the difficulties of creating a reentrance-safe implementation [here](http://briandunnington.github.io/reentrant-async-locks.html).
+Unlike most other so-called "async locks" for C#, AsyncLock is actually designed to support the programming paradigm `lock` encourages, not just the technical elements. You can read more about the pitfalls with other so-called asynchronous locks and the difficulties of creating a reentrance-safe implementation [here](https://neosmart.net/blog/2017/asynclock-an-asyncawait-friendly-locking-library-for-c-and-net/).
 
 With `AsyncLock`, you don't have to worry about which thread is running what code in order to determine whether or not your locks will have any effect or if they'll be bypassed completely, you just write code the way you normally would and you'll find AsyncLock to correctly marshal access to protected code segments.
 
