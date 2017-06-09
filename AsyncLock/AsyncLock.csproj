@@ -5,7 +5,7 @@
     <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
     <AssemblyName>NeoSmart.AsyncLock</AssemblyName>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>0.2</Version>
+    <Version>0.3.0.2</Version>
     <Authors>NeoSmart Technologies, Mahmoud Al-Qudsi</Authors>
     <Company>NeoSmart Technologies</Company>
     <Product>NeoSmart.AsyncLock</Product>
@@ -16,18 +16,12 @@
     <RepositoryUrl>https://github.com/neosmart/AsyncLock</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>asynclock, async await, async, await, lock, synchronization</PackageTags>
-    <PackageReleaseNotes>* Fixed thread id conflicts when awaiting on Task.Delay
-* AsyncLock.ThreadId can be used from within tasks to get a unique identifier
-* Full .NET Framework uses faster/more-reliable binary stack trace comparison</PackageReleaseNotes>
-    <AssemblyVersion>0.2.0.0</AssemblyVersion>
-    <FileVersion>0.2.0.0</FileVersion>
+    <PackageReleaseNotes>Smarter method of detecting recursion for faster and more-reliable locking on all platforms</PackageReleaseNotes>
+    <AssemblyVersion>0.3.0.2</AssemblyVersion>
+    <FileVersion>0.3.0.2</FileVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-    <PackageReference Include="System.Reflection" Version="4.3.0" />
-    <PackageReference Include="System.Diagnostics.StackTrace">
-      <Version>4.3.0</Version>
-    </PackageReference>
   </ItemGroup>
 
 </Project>
