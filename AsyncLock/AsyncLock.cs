@@ -25,7 +25,7 @@ namespace NeoSmart.AsyncLock
         //We generate a unique id from the thread ID combined with the task ID, if any
         public static long ThreadId => (long) (((ulong)_threadId.Value) << 32) | ((uint)(Task.CurrentId ?? 0));
 
-        public struct InnerLock : IDisposable
+        struct InnerLock : IDisposable
         {
             private readonly AsyncLock _parent;
 #if DEBUG
@@ -46,6 +46,15 @@ namespace NeoSmart.AsyncLock
                 {
                     //we need to wait for someone to leave the lock before trying again
                     await _parent._retry.WaitAsync();
+                }
+            }
+
+            internal async Task ObtainLockAsync(CancellationToken ct)
+            {
+                while (!TryEnter())
+                {
+                    //we need to wait for someone to leave the lock before trying again
+                    await _parent._retry.WaitAsync(ct);
                 }
             }
 
@@ -98,17 +107,24 @@ namespace NeoSmart.AsyncLock
             }
         }
 
-        public InnerLock Lock()
+        public IDisposable Lock()
         {
             var @lock = new InnerLock(this);
             @lock.ObtainLock();
             return @lock;
         }
 
-        public async Task<InnerLock> LockAsync()
+        public async Task<IDisposable> LockAsync()
         {
             var @lock = new InnerLock(this);
             await @lock.ObtainLockAsync();
+            return @lock;
+        }
+        
+        public async Task<IDisposable> LockAsync(CancellationToken ct)
+        {
+            var @lock = new InnerLock(this);
+            await @lock.ObtainLockAsync(ct);
             return @lock;
         }
     }
