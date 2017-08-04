@@ -48,6 +48,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CancellationTests.cs" />
     <Compile Include="LimitedResource.cs" />
     <Compile Include="ReentracePermittedTests.cs" />
     <Compile Include="ReentranceLockoutTests.cs" />
