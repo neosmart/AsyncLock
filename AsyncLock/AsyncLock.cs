@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,18 +9,20 @@ namespace NeoSmart.AsyncLock
     {
         private object _reentrancy = new object();
         private int _reentrances = 0;
-        //We are using this SemaphoreSlim like a posix condition variable
-        //we only want to wake waiters, one or more of whom will try to obtain a different lock to do their thing
-        //so long as we can guarantee no wakes are missed, the number of awakees is not important
-        //ideally, this would be "friend" for access only from InnerLock, but whatever.
+        // We are using this SemaphoreSlim like a posix condition variable.
+        // We only want to wake waiters, one or more of whom will try to obtain
+        // a different lock to do their thing. So long as we can guarantee no
+        // wakes are missed, the number of awakees is not important.
+        // Ideally, this would be "friend" for access only from InnerLock, but
+        // whatever.
         internal SemaphoreSlim _retry = new SemaphoreSlim(0, 1);
-        //We do not have System.Threading.Thread.* on .NET Standard without additional dependencies
-        //Work around is easy: create a new ThreadLocal<T> with a random value and this is our thread id :)
-        private static readonly long UnlockedThreadId = 0; //"owning" thread id when unlocked
+        // We do not have System.Threading.Thread.* on .NET Standard without additional dependencies
+        // Work around is easy: create a new ThreadLocal<T> with a random value and this is our thread id :)
+        private static readonly long UnlockedThreadId = 0; // "owning" thread id when unlocked
         internal long _owningId = UnlockedThreadId;
         private static int _globalThreadCounter;
         private static readonly ThreadLocal<int> _threadId = new ThreadLocal<int>(() => Interlocked.Increment(ref _globalThreadCounter));
-        //We generate a unique id from the thread ID combined with the task ID, if any
+        // We generate a unique id from the thread ID combined with the task ID, if any.
         public static long ThreadId => (long) (((ulong)_threadId.Value) << 32) | ((uint)(Task.CurrentId ?? 0));
 
         struct InnerLock : IDisposable
@@ -44,7 +44,7 @@ namespace NeoSmart.AsyncLock
             {
                 while (!TryEnter())
                 {
-                    //we need to wait for someone to leave the lock before trying again
+                    // We need to wait for someone to leave the lock before trying again.
                     await _parent._retry.WaitAsync();
                 }
             }
@@ -53,7 +53,7 @@ namespace NeoSmart.AsyncLock
             {
                 while (!TryEnter())
                 {
-                    //we need to wait for someone to leave the lock before trying again
+                    // We need to wait for someone to leave the lock before trying again.
                     await _parent._retry.WaitAsync(ct);
                 }
             }
@@ -62,7 +62,7 @@ namespace NeoSmart.AsyncLock
             {
                 while (!TryEnter())
                 {
-                    //we need to wait for someone to leave the lock before trying again
+                    // We need to wait for someone to leave the lock before trying again.
                     _parent._retry.Wait();
                 }
             }
@@ -74,10 +74,10 @@ namespace NeoSmart.AsyncLock
                     Debug.Assert((_parent._owningId == UnlockedThreadId) == (_parent._reentrances == 0));
                     if (_parent._owningId != UnlockedThreadId && _parent._owningId != AsyncLock.ThreadId)
                     {
-                        //another thread currently owns the lock
+                        // Another thread currently owns the lock
                         return false;
                     }
-                    //we can go in
+                    // We can go in
                     Interlocked.Increment(ref _parent._reentrances);
                     _parent._owningId = AsyncLock.ThreadId;
                     return true;
@@ -95,8 +95,9 @@ namespace NeoSmart.AsyncLock
                     Interlocked.Decrement(ref _parent._reentrances);
                     if (_parent._reentrances == 0)
                     {
-                        //the owning thread is always the same so long as we are in a nested stack call
-                        //we reset the owning id to null only when the lock is fully unlocked
+                        // The owning thread is always the same so long as we
+                        // are in a nested stack call. We reset the owning id
+                        // to null only when the lock is fully unlocked.
                         _parent._owningId = UnlockedThreadId;
                         if (_parent._retry.CurrentCount == 0)
                         {
@@ -120,7 +121,7 @@ namespace NeoSmart.AsyncLock
             await @lock.ObtainLockAsync();
             return @lock;
         }
-        
+
         public async Task<IDisposable> LockAsync(CancellationToken ct)
         {
             var @lock = new InnerLock(this);
