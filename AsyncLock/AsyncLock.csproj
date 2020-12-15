@@ -1,27 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>netstandard1.3;net5.0</TargetFrameworks>
     <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
-    <AssemblyName>NeoSmart.AsyncLock</AssemblyName>
+    <PackageId>NeoSmart.AsyncLock</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>0.3.0.2</Version>
+    <Version>3.0.0</Version>
     <Authors>NeoSmart Technologies, Mahmoud Al-Qudsi</Authors>
     <Company>NeoSmart Technologies</Company>
     <Product>NeoSmart.AsyncLock</Product>
     <Description>A C# lock replacement for async/await, supporting recursion/re-entrance and asynchronous waits.</Description>
     <Copyright>Copyright NeoSmart Technologies 2017</Copyright>
-    <PackageLicenseUrl>https://cdn.rawgit.com/neosmart/AsyncLock/master/LICENSE</PackageLicenseUrl>
+    <PackageLicense>MIT</PackageLicense>
     <PackageProjectUrl>https://github.com/neosmart/AsyncLock</PackageProjectUrl>
     <RepositoryUrl>https://github.com/neosmart/AsyncLock</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>asynclock, async await, async, await, lock, synchronization</PackageTags>
     <PackageReleaseNotes>Smarter method of detecting recursion for faster and more-reliable locking on all platforms</PackageReleaseNotes>
-    <AssemblyVersion>0.3.0.2</AssemblyVersion>
-    <FileVersion>0.3.0.2</FileVersion>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-  </ItemGroup>
 
 </Project>
