@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeoSmart.AsyncLock;
@@ -16,10 +11,10 @@ namespace AsyncLockTests
         readonly AsyncLock _lock = new AsyncLock();
 
         [TestMethod]
-        public void NestedCallReentrance()
+        public async Task NestedCallReentrance()
         {
-            using (_lock.Lock())
-            using (_lock.Lock())
+            using (await _lock.LockAsync())
+            using (await _lock.LockAsync())
             {
                 Debug.WriteLine("Hello from NestedCallReentrance!");
             }
@@ -40,20 +35,20 @@ namespace AsyncLockTests
             new TaskWaiter(task).WaitOne();
         }
 
-        private void NestedFunction()
+        private async Task NestedFunctionAsync()
         {
-            using (_lock.Lock())
+            using (await _lock.LockAsync())
             {
                 Debug.WriteLine("Hello from another (nested) function!");
             }
         }
 
         [TestMethod]
-        public void NestedFunctionCallReentrance()
+        public async Task NestedFunctionCallReentrance()
         {
-            using (_lock.Lock())
+            using (await _lock.LockAsync())
             {
-                NestedFunction();
+                await NestedFunctionAsync();
             }
         }
     }

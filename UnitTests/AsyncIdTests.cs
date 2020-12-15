@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeoSmart.AsyncLock;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+#if false
 namespace AsyncLockTests
 {
     [TestClass]
@@ -78,3 +79,4 @@ namespace AsyncLockTests
         }
     }
 }
+#endif

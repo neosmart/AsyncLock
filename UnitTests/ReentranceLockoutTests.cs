@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -20,7 +20,7 @@ namespace AsyncLockTests
         private void ResourceSimulation(Action action)
         {
             _lock = new AsyncLock();
-            //start n threads and have them obtain the lock and randomly wait, then verify
+            // Start n threads and have them obtain the lock and randomly wait, then verify
             var failure = new ManualResetEventSlim(false);
             _resource = new LimitedResource(() =>
             {
@@ -35,17 +35,15 @@ namespace AsyncLockTests
                 action();
             }
 
-            //MSTest does not support async test methods (apparently, but I could be wrong)
-            //await Task.WhenAll(tasks);
             if (WaitHandle.WaitAny(new[] { _countdown.WaitHandle, failure.WaitHandle }) == 1)
             {
                 Assert.Fail("More than one thread simultaneously accessed the underlying resource!");
             }
         }
 
-        private void ThreadEntryPoint()
+        private async void ThreadEntryPoint()
         {
-            using (_lock.Lock())
+            using (await _lock.LockAsync())
             {
                 _resource.BeginSomethingDangerous();
                 Thread.Sleep(DelayInterval);
@@ -75,9 +73,9 @@ namespace AsyncLockTests
         {
             ResourceSimulation(() =>
             {
-                var t = new Thread(() =>
+                var t = new Thread(async () =>
                 {
-                    using (_lock.Lock())
+                    using (await _lock.LockAsync())
                     {
                         _resource.BeginSomethingDangerous();
                         Thread.Sleep(DelayInterval);
@@ -95,9 +93,9 @@ namespace AsyncLockTests
         [TestMethod]
         public void MultipleThreadsThreadStartLockout()
         {
-            ThreadStart work = () =>
+            ThreadStart work = async () =>
             {
-                using (_lock.Lock())
+                using (await _lock.LockAsync())
                 {
                     _resource.BeginSomethingDangerous();
                     Thread.Sleep(DelayInterval);
@@ -150,23 +148,26 @@ namespace AsyncLockTests
         }
 
         [TestMethod]
-        public void NestedAsyncLockout()
+        public async Task NestedAsyncLockout()
         {
-            var taskStarted = new ManualResetEventSlim(false);
+            var taskStarted = new SemaphoreSlim(0, 1);
+            var taskEnded = new SemaphoreSlim(0, 1);
             var @lock = new AsyncLock();
-            using (@lock.Lock())
+            using (await @lock.LockAsync())
             {
                 var task = Task.Run(async () =>
                 {
-                    taskStarted.Set();
+                    taskStarted.Release();
                     using (await @lock.LockAsync())
                     {
                         Debug.WriteLine("Hello from within an async task!");
                     }
+                    await taskEnded.WaitAsync();
                 });
 
                 taskStarted.Wait();
                 Assert.IsFalse(new TaskWaiter(task).WaitOne(100));
+                taskEnded.Release();
             }
         }
     }
