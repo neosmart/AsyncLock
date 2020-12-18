@@ -79,11 +79,13 @@ namespace NeoSmart.AsyncLock
                         // Another thread currently owns the lock
                         return false;
                     }
+#if DEBUG
                     else
                     {
                         // Nested re-entrance
                         System.Diagnostics.Debugger.Break();
                     }
+#endif
                     // We can go in
                     Interlocked.Increment(ref _parent._reentrances);
                     return true;
