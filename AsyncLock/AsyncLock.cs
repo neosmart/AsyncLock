@@ -50,12 +50,7 @@ namespace NeoSmart.AsyncLock
 #endif
             }
 
-            internal Task<IDisposable> ObtainLockAsync()
-            {
-                return ObtainLockAsync(CancellationToken.None);
-            }
-
-            internal async Task<IDisposable> ObtainLockAsync(CancellationToken ct)
+            internal async Task<IDisposable> ObtainLockAsync(CancellationToken ct = default)
             {
                 while (!await TryEnterAsync())
                 {
@@ -65,9 +60,30 @@ namespace NeoSmart.AsyncLock
                 return this;
             }
 
+            internal IDisposable ObtainLock()
+            {
+                while (!TryEnter())
+                {
+                    // We need to wait for someone to leave the lock before trying again.
+                    _parent._retry.Wait();
+                }
+                return this;
+            }
+
             private async Task<bool> TryEnterAsync()
             {
                 await _parent._reentrancy.WaitAsync();
+                return InnerTryEnter();
+            }
+
+            private bool TryEnter()
+            {
+                _parent._reentrancy.Wait();
+                return InnerTryEnter();
+            }
+
+            private bool InnerTryEnter()
+            {
                 try
                 {
                     Debug.Assert((_parent._owningId == UnlockedId) == (_parent._reentrances == 0));
@@ -149,6 +165,16 @@ namespace NeoSmart.AsyncLock
             }
             var @lock = new InnerLock(this);
             return @lock.ObtainLockAsync(ct);
+        }
+
+        public IDisposable Lock()
+        {
+            if (AsyncId == 0)
+            {
+                _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
+            }
+            var @lock = new InnerLock(this);
+            return @lock.ObtainLock();
         }
     }
 }
