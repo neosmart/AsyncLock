@@ -32,6 +32,9 @@ namespace NeoSmart.AsyncLock
         {
         }
 
+#if !DEBUG
+        readonly
+#endif
         struct InnerLock : IDisposable
         {
             private readonly AsyncLock _parent;
