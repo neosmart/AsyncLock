@@ -38,6 +38,7 @@ namespace NeoSmart.AsyncLock
         struct InnerLock : IDisposable
         {
             private readonly AsyncLock _parent;
+            private readonly long _oldId;
 #if DEBUG
             private bool _disposed;
 #endif
@@ -45,6 +46,7 @@ namespace NeoSmart.AsyncLock
             internal InnerLock(AsyncLock parent)
             {
                 _parent = parent;
+                _oldId = parent._owningId;
 #if DEBUG
                 _disposed = false;
 #endif
@@ -98,13 +100,13 @@ namespace NeoSmart.AsyncLock
                         // Another thread currently owns the lock
                         return false;
                     }
-#if DEBUG
                     else
                     {
                         // Nested re-entrance
-                        System.Diagnostics.Debugger.Break();
+                        _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
+                        _parent._owningId = AsyncId;
                     }
-#endif
+
                     // We can go in
                     Interlocked.Increment(ref _parent._reentrances);
                     return true;
@@ -122,12 +124,14 @@ namespace NeoSmart.AsyncLock
                 _disposed = true;
 #endif
                 var @this = this;
+                var oldId = this._oldId;
                 Task.Run(async () =>
                 {
                     await @this._parent._reentrancy.WaitAsync();
                     try
                     {
                         Interlocked.Decrement(ref @this._parent._reentrances);
+                        @this._parent._owningId = oldId;
                         if (@this._parent._reentrances == 0)
                         {
                             // The owning thread is always the same so long as we
