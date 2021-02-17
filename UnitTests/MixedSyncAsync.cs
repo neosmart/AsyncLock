@@ -28,7 +28,7 @@ namespace AsyncLockTests
             var asyncLock = new AsyncLock();
 
             {
-                using var l= asyncLock.Lock();
+                using var l = asyncLock.Lock();
                 for (int i = 0; i < 10; ++i)
                 {
                     var thread = new Thread(() =>
@@ -84,10 +84,6 @@ namespace AsyncLockTests
             }
 
             Assert.AreEqual(count, 0);
-        }
-
-        private static async Task SomeMethod(int i)
-        {
         }
     }
 }

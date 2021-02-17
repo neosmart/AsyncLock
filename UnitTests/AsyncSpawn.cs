@@ -27,8 +27,7 @@ namespace AsyncLockTests
         public async Task AsyncExecution(bool locked)
         {
             var count = 0;
-            var threads = new List<Thread>(10);
-            var tasks = new List<Task>(10);
+            var tasks = new List<Task>(70);
             var asyncLock = new AsyncLock();
 
             {
@@ -41,11 +40,13 @@ namespace AsyncLockTests
                         using (await asyncLock.LockAsync())
                         {
                             Assert.AreEqual(Interlocked.Increment(ref count), 1);
+                            await Task.Yield();
                             Assert.AreEqual(count, 1);
                             await Task.Delay(100);
                             using (await asyncLock.LockAsync())
                             {
-                                await Task.Delay(10);
+                                await Task.Delay(100);
+                                await Task.Yield();
                                 Assert.AreEqual(Interlocked.Decrement(ref count), 0);
                             }
 
