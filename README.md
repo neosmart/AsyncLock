@@ -5,7 +5,7 @@ AsyncLock is an async/await-friendly lock implementation for .NET Standard, maki
 ```csharp
 lock (_lockObject)
 {
-  await DoSomething();
+    await DoSomething();
 }
 ```
 Unlike most other so-called "async locks" for C#, AsyncLock is actually designed to support the programming paradigm `lock` encourages, not just the technical elements. You can read more about the pitfalls with other so-called asynchronous locks and the difficulties of creating a reentrance-safe implementation [here](https://neosmart.net/blog/2017/asynclock-an-asyncawait-friendly-locking-library-for-c-and-net/).
@@ -18,7 +18,7 @@ There are only three functions to familiarize yourself with: the `AsyncLock()` c
 
 `AsyncLock()` creates a new asynchronous lock. A separate AsyncLock should be used for each "critical operation" you will be performing. (Or you can use a global lock just like some people still insist on using global mutexes and semaphores. We won't judge too harshly.)
 
-Everywhere you would normally use `lock (_lockObject)` you will now use one of 
+Everywhere you would normally use `lock (_lockObject)` you will now use one of
 
 * `using (_lock.Lock())` or
 * `using (await _lock.LockAsync())`
@@ -36,32 +36,34 @@ Upon using `LockAsync()`, `AsyncLock` will attempt to obtain exclusive access to
 ```csharp
 private class AsyncLockTest
 {
-  AsyncLock _lock = new AsyncLock();
-  
-  void Test()
-  {
-    //the code below will be run immediately (and asynchronously, in a new thread)
-    Task.Run(async () =>
-       {
-         //this first call to LockAsync() will obtain the lock without blocking
-         using (await _lock.LockAsync())
-         {
-           //this second call to LockAsync() will be recognized as being a reentrant call and go through
-           using (await _lock.LockAsync())
-           {
-             //we now hold the lock exclusively and no one else can use it for 1 minute
-             await Task.Delay(TimeSpan.FromMinutes(1));
-           }
-         }
-       }).Wait(TimeSpan.FromSeconds(30));
+    var _lock = new AsyncLock();
 
-    //this call to obtain the lock is synchronously made from the main thread
-    //It will, however, block until the asynchronous code which obtained the lock above finishes
-    using (_lock.Lock())
+    void Test()
     {
-      //now we have obtained exclusive access
-      //perform non-thread-safe operation safely here
+        // The code below will be run immediately (likely in a new thread)
+        Task.Run(async () =>
+             {
+                 // A first call to LockAsync() will obtain the lock without blocking
+                 using (await _lock.LockAsync())
+                 {
+                     // A second call to LockAsync() will be recognized as being
+                     // reentrant and permitted to go through without blocking.
+                     using (await _lock.LockAsync())
+                     {
+                         // We now exclusively hold the lock for 1 minute
+                         await Task.Delay(TimeSpan.FromMinutes(1));
+                     }
+                 }
+             }).Wait(TimeSpan.FromSeconds(30));
+
+        // This call to obtain the lock is made synchronously from the main thread.
+        // It will, however, block until the asynchronous code which obtained the lock
+        // above finishes.
+        using (_lock.Lock())
+        {
+            // Now we have obtained exclusive access.
+            // <Safely perform non-thread-safe operation safely here>
+        }
     }
-  }
 }
 ```
