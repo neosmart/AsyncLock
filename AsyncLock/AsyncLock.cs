@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,7 +68,7 @@ namespace NeoSmart.AsyncLock
 
             internal async Task<IDisposable> ObtainLockAsync(CancellationToken ct = default)
             {
-                while (!await TryEnterAsync())
+                while (!await TryEnterAsync(ct))
                 {
                     // We need to wait for someone to leave the lock before trying again.
                     await _parent._retry.WaitAsync(ct);
@@ -111,7 +113,7 @@ namespace NeoSmart.AsyncLock
                     now = DateTimeOffset.UtcNow;
                     remainder -= now - last;
                     last = now;
-                    if (!await _parent._retry.WaitAsync(remainder))
+                    if (remainder < TimeSpan.Zero || !await _parent._retry.WaitAsync(remainder))
                     {
                         return null;
                     }
@@ -126,7 +128,15 @@ namespace NeoSmart.AsyncLock
 
             internal async Task<IDisposable?> TryObtainLockAsync(CancellationToken cancel)
             {
-                if (!await TryEnterAsync(cancel))
+                try
+                {
+                    while (!await TryEnterAsync(cancel))
+                    {
+                        // We need to wait for someone to leave the lock before trying again.
+                        await _parent._retry.WaitAsync(cancel);
+                    }
+                }
+                catch (OperationCanceledException)
                 {
                     return null;
                 }
@@ -189,23 +199,9 @@ namespace NeoSmart.AsyncLock
                 return null;
             }
 
-            private async Task<bool> TryEnterAsync()
+            private async Task<bool> TryEnterAsync(CancellationToken cancel = default)
             {
-                await _parent._reentrancy.WaitAsync();
-                return InnerTryEnter();
-            }
-
-            private async Task<bool> TryEnterAsync(CancellationToken cancel)
-            {
-                try
-                {
-                    await _parent._reentrancy.WaitAsync(cancel);
-                }
-                catch (OperationCanceledException)
-                {
-                    return false;
-                }
-
+                await _parent._reentrancy.WaitAsync(cancel);
                 return InnerTryEnter();
             }
 
@@ -502,5 +498,71 @@ namespace NeoSmart.AsyncLock
             }
             return true;
         }
+
+#if TRY_LOCK_OUT_BOOL
+        private static readonly NullDisposable NullDisposable = new();
+
+        public IDisposable TryLock(TimeSpan timeout, out bool locked)
+        {
+            var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
+            // Increment the async stack counter to prevent a child task from getting
+            // the lock at the same time as a child thread.
+            _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
+            var result = @lock.TryObtainLock(timeout);
+            locked = result is not null;
+            return result ?? NullDisposable;
+        }
+
+        // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
+        // the AsyncLocal value.
+        public Task<IDisposable> TryLockAsync(CancellationToken ct, out bool locked)
+        {
+            var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
+            _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
+
+            locked = false;
+
+            unsafe
+            {
+                // This is safe because we are not actually in an async method
+                fixed (bool *addr = &locked)
+                {
+                    var addrLong = (ulong)addr;
+                    return @lock.TryObtainLockAsync(ct).ContinueWith((state) =>
+                    {
+                        var result = state.Result;
+                        *(bool*)addrLong = result is not null;
+                        return result ?? NullDisposable;
+                    }, TaskContinuationOptions.OnlyOnRanToCompletion);
+                }
+            }
+        }
+
+        // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
+        // the AsyncLocal value.
+        public Task<IDisposable> TryLockAsync(TimeSpan timeout, out bool locked)
+        {
+            var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
+            _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
+
+            locked = false;
+
+            unsafe
+            {
+                // This is safe because we are not actually in an async method
+                fixed (bool* addr = &locked)
+                {
+                    var addrLong = (ulong)addr;
+                    return @lock.TryObtainLockAsync(timeout).ContinueWith((state) =>
+                    {
+                        var result = state.Result;
+                        *(bool*)addrLong = result is not null;
+                        return result ?? NullDisposable;
+                    }, TaskContinuationOptions.OnlyOnRanToCompletion);
+                }
+            }
+        }
+
+#endif
     }
 }
