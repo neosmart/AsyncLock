@@ -479,7 +479,7 @@ namespace NeoSmart.AsyncLock
             return @lock.ObtainLock();
         }
 
-        public bool TryLock(TimeSpan timeout, Action callback)
+        public bool TryLock(Action callback, TimeSpan timeout)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             // Increment the async stack counter to prevent a child task from getting

@@ -13,7 +13,7 @@ namespace AsyncLockTests
         {
             var @lock = new AsyncLock();
 
-            Assert.IsTrue(@lock.TryLock(default, () => { }));
+            Assert.IsTrue(@lock.TryLock(() => { }, default));
         }
 
         [TestMethod]
@@ -25,7 +25,7 @@ namespace AsyncLockTests
             {
                 var thread = new Thread(() =>
                 {
-                    Assert.IsFalse(@lock.TryLock(TimeSpan.FromMilliseconds(0), () => throw new Exception("This should never be executed")));
+                    Assert.IsFalse(@lock.TryLock(() => throw new Exception("This should never be executed"), default));
                 });
                 thread.Start();
                 thread.Join();
@@ -69,10 +69,10 @@ namespace AsyncLockTests
                 eventTestThreadStarted.Set();
                 eventSleepNotStarted.WaitOne();
                 eventAboutToWait.Set();
-                Assert.IsTrue((!expectedResult) ^ @lock.TryLock(TimeSpan.FromMilliseconds(lockTimeoutMs), () =>
+                Assert.IsTrue((!expectedResult) ^ @lock.TryLock(() =>
                 {
                     Assert.AreEqual(2, step);
-                }));
+                }, TimeSpan.FromMilliseconds(lockTimeoutMs)));
             });
             testThread.Start();
 
