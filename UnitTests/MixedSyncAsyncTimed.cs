@@ -71,19 +71,19 @@ namespace AsyncLockTests
                             }
                             else
                             {
-                                var executed = await asyncLock.TryLockAsync(TimeSpan.FromMilliseconds(100), async () =>
+                                var executed = await asyncLock.TryLockAsync(async () =>
                                 {
                                     // Throw in a recursive async lock invocation
-                                    bool nestedExecuted = await asyncLock.TryLockAsync(TimeSpan.FromMilliseconds(1), async () =>
+                                    bool nestedExecuted = await asyncLock.TryLockAsync(async () =>
                                     {
                                         await Task.Yield();
                                         Interlocked.Increment(ref count);
-                                    });
+                                    }, TimeSpan.FromMilliseconds(1 /* guarantees no zero-ms optimizations */));
                                     Assert.IsTrue(nestedExecuted);
                                     Interlocked.Decrement(ref count);
                                     await Task.Delay(10);
                                     Assert.AreEqual(Interlocked.Decrement(ref count), 0);
-                                });
+                                }, TimeSpan.FromMilliseconds(100));
                                 Assert.IsTrue(executed, "TryLockAsync() did not end up executing!");
                             }
 

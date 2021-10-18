@@ -338,7 +338,7 @@ namespace NeoSmart.AsyncLock
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
         // the AsyncLocal value.
-        public Task<bool> TryLockAsync(TimeSpan timeout, Action callback)
+        public Task<bool> TryLockAsync(Action callback, TimeSpan timeout)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
@@ -370,7 +370,7 @@ namespace NeoSmart.AsyncLock
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
         // the AsyncLocal value.
-        public Task<bool> TryLockAsync(TimeSpan timeout, Func<Task> callback)
+        public Task<bool> TryLockAsync(Func<Task> callback, TimeSpan timeout)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);

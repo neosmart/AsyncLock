@@ -18,7 +18,7 @@ namespace AsyncLockTests
         {
             var @lock = new AsyncLock();
 
-            Assert.IsTrue(await @lock.TryLockAsync(default, () => { }));
+            Assert.IsTrue(await @lock.TryLockAsync(() => { }, TimeSpan.Zero));
         }
 
         /// <summary>
@@ -32,10 +32,10 @@ namespace AsyncLockTests
 
             await Assert.ThrowsExceptionAsync<LocalException>(async () =>
             {
-                await @lock.TryLockAsync(default, async () => {
+                await @lock.TryLockAsync(async () => {
                     await Task.Yield();
                     throw new LocalException("This exception needs to be bubbled up");
-                });
+                }, TimeSpan.Zero);
             });
         }
 
@@ -48,7 +48,7 @@ namespace AsyncLockTests
             {
                 var thread = new Thread(async () =>
                 {
-                    Assert.IsFalse(await @lock.TryLockAsync(TimeSpan.FromMilliseconds(0), () => throw new Exception("This should never be executed")));
+                    Assert.IsFalse(await @lock.TryLockAsync(() => throw new Exception("This should never be executed"), TimeSpan.Zero));
                 });
                 thread.Start();
                 thread.Join();
@@ -92,10 +92,10 @@ namespace AsyncLockTests
                 eventTestThreadStarted.Release();
                 await eventSleepNotStarted.WaitAsync();
                 eventAboutToWait.Release();
-                Assert.IsTrue((!expectedResult) ^ await @lock.TryLockAsync(TimeSpan.FromMilliseconds(lockTimeoutMs), () =>
+                Assert.IsTrue((!expectedResult) ^ await @lock.TryLockAsync(() =>
                 {
                     Assert.AreEqual(2, step);
-                }));
+                }, TimeSpan.FromMilliseconds(lockTimeoutMs)));
             });
             testThread.Start();
 
