@@ -5,11 +5,11 @@
     <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
     <PackageId>NeoSmart.AsyncLock</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>3.1.0</Version>
+    <Version>3.2.0</Version>
     <Authors>NeoSmart Technologies, Mahmoud Al-Qudsi</Authors>
     <Company>NeoSmart Technologies</Company>
     <Product>NeoSmart.AsyncLock</Product>
-    <Description>A C# lock replacement for async/await, supporting recursion/re-entrance and asynchronous waits.</Description>
+    <Description>A C# lock replacement for async/await, supporting recursion/re-entrance and asynchronous waits. Handles async recursion correctly - note that Nito.AsyncEx does not!</Description>
     <Copyright>Copyright NeoSmart Technologies 2017-2021</Copyright>
     <PackageLicense>MIT</PackageLicense>
     <PackageProjectUrl>https://neosmart.net/blog/2017/asynclock-an-asyncawait-friendly-locking-library-for-c-and-net/</PackageProjectUrl>
@@ -18,8 +18,12 @@
     <PackageTags>asynclock, async await, async, await, lock, synchronization</PackageTags>
     <PackageReleaseNotes>3.0: Smarter method of detecting recursion for faster and more-reliable locking on all platforms.
 
-3.1: Added synchronous locking that may be intermixed with async locking.</PackageReleaseNotes>
+3.1: Added synchronous locking that may be intermixed with async locking.
+
+3.2: Added TryLock() and TryLockAsync() methods.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
 </Project>
