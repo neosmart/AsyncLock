@@ -149,12 +149,12 @@ namespace NeoSmart.AsyncLock
                 return this;
             }
 
-            internal IDisposable ObtainLock()
+            internal IDisposable ObtainLock(CancellationToken cancellationToken)
             {
                 while (!TryEnter())
                 {
                     // We need to wait for someone to leave the lock before trying again.
-                    _parent._retry.Wait();
+                    _parent._retry.Wait(cancellationToken);
                 }
                 return this;
             }
@@ -466,13 +466,13 @@ namespace NeoSmart.AsyncLock
                 }).Unwrap();
         }
 
-        public IDisposable Lock()
+        public IDisposable Lock(CancellationToken cancellationToken = default)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             // Increment the async stack counter to prevent a child task from getting
             // the lock at the same time as a child thread.
             _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
-            return @lock.ObtainLock();
+            return @lock.ObtainLock(cancellationToken);
         }
 
         public bool TryLock(Action callback, TimeSpan timeout)
