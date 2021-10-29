@@ -5,7 +5,7 @@
     <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
     <PackageId>NeoSmart.AsyncLock</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>3.2.0-preview1</Version>
+    <Version>3.2.0-preview2</Version>
     <Authors>NeoSmart Technologies, Mahmoud Al-Qudsi</Authors>
     <Company>NeoSmart Technologies</Company>
     <Product>NeoSmart.AsyncLock</Product>
