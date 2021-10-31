@@ -26,6 +26,7 @@ namespace AsyncLockTests
             var threads = new List<Thread>(10);
             var tasks = new List<Task>(10);
             var asyncLock = new AsyncLock();
+            var rng = new Random();
 
             {
                 using var l = asyncLock.Lock();
@@ -36,7 +37,7 @@ namespace AsyncLockTests
                         using (asyncLock.Lock())
                         {
                             Assert.AreEqual(Interlocked.Increment(ref count), 1);
-                            Thread.Sleep(100);
+                            Thread.Sleep(rng.Next(1, 10) * 10);
                             using (asyncLock.Lock())
                             {
                                 Thread.Sleep(10);
@@ -59,7 +60,7 @@ namespace AsyncLockTests
                         {
                             Assert.AreEqual(Interlocked.Increment(ref count), 1);
                             Assert.AreEqual(count, 1);
-                            await Task.Delay(100);
+                            await Task.Delay(rng.Next(1, 10) * 10);
                             using (await asyncLock.LockAsync())
                             {
                                 await Task.Delay(10);
@@ -74,10 +75,7 @@ namespace AsyncLockTests
                 }
             }
 
-            foreach (var task in tasks)
-            {
-                await task;
-            }
+            await Task.WhenAll(tasks);
             foreach (var thread in threads)
             {
                 thread.Join();

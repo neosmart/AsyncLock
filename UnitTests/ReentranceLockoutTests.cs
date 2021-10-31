@@ -15,7 +15,7 @@ namespace AsyncLockTests
         private LimitedResource _resource;
         private CountdownEvent _countdown;
         private Random _random = new Random((int)DateTime.UtcNow.Ticks);
-        private int DelayInterval => _random.Next(5, 10) * 10;
+        private int DelayInterval => _random.Next(1, 5) * 10;
 
         private void ResourceSimulation(Action action)
         {

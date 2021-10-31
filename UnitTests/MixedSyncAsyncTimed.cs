@@ -26,6 +26,7 @@ namespace AsyncLockTests
             var threads = new List<Thread>(10);
             var tasks = new List<Task>(10);
             var asyncLock = new AsyncLock();
+            var rng = new Random();
 
             {
                 using var l = asyncLock.Lock();
@@ -36,7 +37,7 @@ namespace AsyncLockTests
                         using (asyncLock.Lock())
                         {
                             Assert.AreEqual(Interlocked.Increment(ref count), 1);
-                            Thread.Sleep(100);
+                            Thread.Sleep(rng.Next(1, 10) * 10);
                             using (asyncLock.Lock())
                             {
                                 Thread.Sleep(10);
@@ -60,12 +61,12 @@ namespace AsyncLockTests
                         {
                             Assert.AreEqual(Interlocked.Increment(ref count), 1);
                             Assert.AreEqual(count, 1);
-                            await Task.Delay(100);
+                            await Task.Delay(rng.Next(1, 10) * 10);
                             if (captured % 2 == 0)
                             {
                                 using (await asyncLock.LockAsync())
                                 {
-                                    await Task.Delay(10);
+                                    await Task.Yield();
                                     Assert.AreEqual(Interlocked.Decrement(ref count), 0);
                                 }
                             }
@@ -81,9 +82,9 @@ namespace AsyncLockTests
                                     }, TimeSpan.FromMilliseconds(1 /* guarantees no zero-ms optimizations */));
                                     Assert.IsTrue(nestedExecuted);
                                     Interlocked.Decrement(ref count);
-                                    await Task.Delay(10);
+                                    await Task.Yield();
                                     Assert.AreEqual(Interlocked.Decrement(ref count), 0);
-                                }, TimeSpan.FromMilliseconds(100));
+                                }, TimeSpan.FromMilliseconds(rng.Next(1, 10) * 10));
                                 Assert.IsTrue(executed, "TryLockAsync() did not end up executing!");
                             }
 
@@ -95,10 +96,7 @@ namespace AsyncLockTests
                 }
             }
 
-            foreach (var task in tasks)
-            {
-                await task;
-            }
+            await Task.WhenAll(tasks);
             foreach (var thread in threads)
             {
                 thread.Join();

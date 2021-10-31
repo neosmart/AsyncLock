@@ -29,6 +29,7 @@ namespace AsyncLockTests
             var count = 0;
             var tasks = new List<Task>(70);
             var asyncLock = new AsyncLock();
+            var rng = new Random();
 
             {
                 using var l = locked ? await asyncLock.LockAsync() : new NullDisposable();
@@ -42,11 +43,10 @@ namespace AsyncLockTests
                             Assert.AreEqual(Interlocked.Increment(ref count), 1);
                             await Task.Yield();
                             Assert.AreEqual(count, 1);
-                            await Task.Delay(100);
+                            await Task.Delay(rng.Next(1, 10) * 10);
                             using (await asyncLock.LockAsync())
                             {
-                                await Task.Delay(100);
-                                await Task.Yield();
+                                await Task.Delay(rng.Next(1, 10) * 10);
                                 Assert.AreEqual(Interlocked.Decrement(ref count), 0);
                             }
 
@@ -58,10 +58,7 @@ namespace AsyncLockTests
                 }
             }
 
-            foreach (var task in tasks)
-            {
-                await task;
-            }
+            await Task.WhenAll(tasks);
 
             Assert.AreEqual(count, 0);
         }

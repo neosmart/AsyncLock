@@ -28,28 +28,37 @@ namespace AsyncLockTests
             }).Wait();
 
         }
+
         [TestMethod]
         public void CancellingWaitSync()
         {
             var asyncLock = new AsyncLock();
-            var cts = new CancellationTokenSource(500);
-            Task.Run(async () =>
+            var cts = new CancellationTokenSource(250);
+            var delayStarted = new ManualResetEventSlim(false);
+            var waiter1Finished = new SemaphoreSlim(0, 1);
+
+            new Thread(() =>
             {
                 using (asyncLock.Lock(cts.Token))
                 {
                     // hold the lock until our later attempt is called
-                    await Task.Delay(1000);
+                    delayStarted.Set();
+                    waiter1Finished.Wait();
                 }
-            });
+            }).Start();
+
             Assert.ThrowsException<OperationCanceledException>(() =>
             {
+                delayStarted.Wait();
                 using (asyncLock.Lock(cts.Token))
                 {
                     Assert.Fail("should never reach here if cancellation works properly.");
                 }
             });
-            // we should still be able to obtain a lock afterward to make sure resources were reobtained
-            var newCts= new CancellationTokenSource(1000);
+            waiter1Finished.Release(1);
+
+            // We should still be able to obtain a lock afterward to make sure resources were reobtained
+            var newCts = new CancellationTokenSource(2000);
             using (asyncLock.Lock(newCts.Token))
             {
                 // reaching this line means the test passed
