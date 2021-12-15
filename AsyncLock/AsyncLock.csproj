@@ -5,7 +5,7 @@
     <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
     <PackageId>NeoSmart.AsyncLock</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>3.2.0-preview2</Version>
+    <Version>3.2.0</Version>
     <Authors>NeoSmart Technologies, Mahmoud Al-Qudsi</Authors>
     <Company>NeoSmart Technologies</Company>
     <Product>NeoSmart.AsyncLock</Product>
@@ -16,7 +16,10 @@
     <RepositoryUrl>https://github.com/neosmart/AsyncLock</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>asynclock, async await, async, await, lock, synchronization</PackageTags>
-    <PackageReleaseNotes>3.0: Smarter method of detecting recursion for faster and more-reliable locking on all platforms.
+    <PackageReleaseNotes>
+3.2: New TryLock() and TryLockAsync() methods, CancellationToken support for synchronous locking routines.
+
+3.0: Smarter method of detecting recursion for faster and more-reliable locking on all platforms.
 
 3.1: Added synchronous locking that may be intermixed with async locking.
 
