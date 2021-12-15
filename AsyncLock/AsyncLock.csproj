@@ -31,6 +31,8 @@
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>AsyncLock.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
 </Project>
