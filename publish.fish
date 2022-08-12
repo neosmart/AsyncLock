@@ -43,9 +43,13 @@ function publish_csproj
 		exit 1
 	end
 
+	# This message is printed by nuget when pushing an actual package, but not for the snupkg:
+	echo "Pushing $snupkg to 'https://nuget.org'"
 	if ! nuget push $snupkg
+		echo "Error publishing snupkg"
 		exit 1
 	end
+	echo "Your snupkg package was pushed"
 
 end
 
