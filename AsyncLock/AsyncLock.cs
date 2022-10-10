@@ -48,6 +48,10 @@ namespace NeoSmart.AsyncLock
         readonly
 #endif
         struct InnerLock : IDisposable
+            #if NETSTANDARD2_1 || NET5_0
+            ,IAsyncDisposable
+            #endif
+
         {
             private readonly AsyncLock _parent;
             private readonly long _oldId;
@@ -294,33 +298,51 @@ namespace NeoSmart.AsyncLock
                 var @this = this;
                 var oldId = this._oldId;
                 var oldThreadId = this._oldThreadId;
-                Task.Run(async () =>
+                Task.Run(async () => await _disposeTask(@this, oldId, oldThreadId));
+            }
+
+            private static async Task _disposeTask(InnerLock @this, long oldId, int oldThreadId)
+            {
+                await @this._parent._reentrancy.WaitAsync();
+                try
                 {
-                    await @this._parent._reentrancy.WaitAsync();
-                    try
+                    Interlocked.Decrement(ref @this._parent._reentrances);
+                    @this._parent._owningId = oldId;
+                    @this._parent._owningThreadId = oldThreadId;
+                    if (@this._parent._reentrances == 0)
                     {
-                        Interlocked.Decrement(ref @this._parent._reentrances);
-                        @this._parent._owningId = oldId;
-                        @this._parent._owningThreadId = oldThreadId;
-                        if (@this._parent._reentrances == 0)
+                        // The owning thread is always the same so long as we
+                        // are in a nested stack call. We reset the owning id
+                        // only when the lock is fully unlocked.
+                        @this._parent._owningId = UnlockedId;
+                        @this._parent._owningThreadId = (int)UnlockedId;
+                        if (@this._parent._retry.CurrentCount == 0)
                         {
-                            // The owning thread is always the same so long as we
-                            // are in a nested stack call. We reset the owning id
-                            // only when the lock is fully unlocked.
-                            @this._parent._owningId = UnlockedId;
-                            @this._parent._owningThreadId = (int)UnlockedId;
-                            if (@this._parent._retry.CurrentCount == 0)
-                            {
-                                @this._parent._retry.Release();
-                            }
+                            @this._parent._retry.Release();
                         }
                     }
-                    finally
-                    {
-                        @this._parent._reentrancy.Release();
-                    }
-                });
+                }
+                finally
+                {
+                    @this._parent._reentrancy.Release();
+                }
             }
+
+            #if NETSTANDARD2_1 || NET5_0
+            public async ValueTask DisposeAsync()
+            {
+#if DEBUG
+                Debug.Assert(!_disposed);
+                _disposed = true;
+#endif
+
+                var @this = this;
+                var oldId = this._oldId;
+                var oldThreadId = this._oldThreadId;
+
+                await _disposeTask(@this, oldId, oldThreadId);
+            }
+            #endif
         }
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
