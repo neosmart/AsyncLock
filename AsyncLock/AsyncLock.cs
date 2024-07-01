@@ -68,10 +68,10 @@ namespace NeoSmart.AsyncLock
 
             internal async Task<IDisposable> ObtainLockAsync(CancellationToken ct = default)
             {
-                while (!await TryEnterAsync(ct))
+                while (!await TryEnterAsync(ct).ConfigureAwait(false))
                 {
                     // We need to wait for someone to leave the lock before trying again.
-                    await _parent._retry.WaitAsync(ct);
+                    await _parent._retry.WaitAsync(ct).ConfigureAwait(false);
                 }
                 // Reset the owning thread id after all await calls have finished, otherwise we
                 // could be resumed on a different thread and set an incorrect value.
@@ -86,7 +86,7 @@ namespace NeoSmart.AsyncLock
                 // In case of zero-timeout, don't even wait for protective lock contention
                 if (timeout == TimeSpan.Zero)
                 {
-                    if (await TryEnterAsync(timeout))
+                    if (await TryEnterAsync(timeout).ConfigureAwait(false))
                     {
                         return this;
                     }
@@ -100,7 +100,7 @@ namespace NeoSmart.AsyncLock
                 // We need to wait for someone to leave the lock before trying again.
                 while (remainder > TimeSpan.Zero)
                 {
-                    if (await TryEnterAsync(remainder))
+                    if (await TryEnterAsync(remainder).ConfigureAwait(false))
                     {
                         // Reset the owning thread id after all await calls have finished, otherwise we
                         // could be resumed on a different thread and set an incorrect value.
@@ -113,7 +113,7 @@ namespace NeoSmart.AsyncLock
                     now = DateTimeOffset.UtcNow;
                     remainder -= now - last;
                     last = now;
-                    if (remainder < TimeSpan.Zero || !await _parent._retry.WaitAsync(remainder))
+                    if (remainder < TimeSpan.Zero || !await _parent._retry.WaitAsync(remainder).ConfigureAwait(false))
                     {
                         return null;
                     }
@@ -130,10 +130,10 @@ namespace NeoSmart.AsyncLock
             {
                 try
                 {
-                    while (!await TryEnterAsync(cancel))
+                    while (!await TryEnterAsync(cancel).ConfigureAwait(false))
                     {
                         // We need to wait for someone to leave the lock before trying again.
-                        await _parent._retry.WaitAsync(cancel);
+                        await _parent._retry.WaitAsync(cancel).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException)
@@ -201,13 +201,13 @@ namespace NeoSmart.AsyncLock
 
             private async Task<bool> TryEnterAsync(CancellationToken cancel = default)
             {
-                await _parent._reentrancy.WaitAsync(cancel);
+                await _parent._reentrancy.WaitAsync(cancel).ConfigureAwait(false);
                 return InnerTryEnter();
             }
 
             private async Task<bool> TryEnterAsync(TimeSpan timeout)
             {
-                if (!await _parent._reentrancy.WaitAsync(timeout))
+                if (!await _parent._reentrancy.WaitAsync(timeout).ConfigureAwait(false))
                 {
                     return false;
                 }
@@ -296,7 +296,7 @@ namespace NeoSmart.AsyncLock
                 var oldThreadId = this._oldThreadId;
                 Task.Run(async () =>
                 {
-                    await @this._parent._reentrancy.WaitAsync();
+                    await @this._parent._reentrancy.WaitAsync().ConfigureAwait(false);
                     try
                     {
                         Interlocked.Decrement(ref @this._parent._reentrances);
