@@ -361,7 +361,7 @@ namespace NeoSmart.AsyncLock
                         disposableLock.Dispose();
                     }
                     return true;
-                });
+                }, TaskScheduler.Default);
         }
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
@@ -395,8 +395,8 @@ namespace NeoSmart.AsyncLock
                             }
 
                             return true;
-                        });
-                }).Unwrap();
+                        }, TaskScheduler.Default);
+                }, TaskScheduler.Default).Unwrap();
         }
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
@@ -428,7 +428,7 @@ namespace NeoSmart.AsyncLock
                         disposableLock.Dispose();
                     }
                     return true;
-                });
+                }, TaskScheduler.Default);
         }
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
@@ -462,8 +462,8 @@ namespace NeoSmart.AsyncLock
                             }
 
                             return true;
-                        });
-                }).Unwrap();
+                        }, TaskScheduler.Default);
+                }, TaskScheduler.Default).Unwrap();
         }
 
         public IDisposable Lock(CancellationToken cancellationToken = default)
@@ -533,7 +533,7 @@ namespace NeoSmart.AsyncLock
                         var result = state.Result;
                         *(bool*)addrLong = result is not null;
                         return result ?? NullDisposable;
-                    }, TaskContinuationOptions.OnlyOnRanToCompletion);
+                    }, default(CancellationToken), TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
                 }
             }
         }
@@ -558,7 +558,7 @@ namespace NeoSmart.AsyncLock
                         var result = state.Result;
                         *(bool*)addrLong = result is not null;
                         return result ?? NullDisposable;
-                    }, TaskContinuationOptions.OnlyOnRanToCompletion);
+                    }, default(CancellationToken), TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
                 }
             }
         }
