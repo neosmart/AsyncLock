@@ -256,8 +256,6 @@ namespace NeoSmart.AsyncLock
                     {
                         if (_parent._owningId == UnlockedId)
                         {
-                            // Obtain a new async stack ID
-                            //_asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
                             _parent._owningId = AsyncLock.AsyncId;
                         }
                         else if (_parent._owningId != _oldId)
