@@ -88,6 +88,11 @@ namespace NeoSmart.AsyncLock
                 {
                     if (await TryEnterAsync(timeout))
                     {
+                        // Reset the owning thread id after all await calls have finished, otherwise we
+                        // could be resumed on a different thread and set an incorrect value.
+                        _parent._owningThreadId = ThreadId;
+                        // In case of !synchronous and success, TryEnter() does not release the reentrancy lock
+                        _parent._reentrancy.Release();
                         return this;
                     }
                     return null;
