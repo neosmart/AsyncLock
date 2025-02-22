@@ -299,32 +299,29 @@ namespace NeoSmart.AsyncLock
                 var @this = this;
                 var oldId = this._oldId;
                 var oldThreadId = this._oldThreadId;
-                Task.Run(async () =>
+                @this._parent._reentrancy.Wait();
+                try
                 {
-                    await @this._parent._reentrancy.WaitAsync();
-                    try
+                    Interlocked.Decrement(ref @this._parent._reentrances);
+                    @this._parent._owningId = oldId;
+                    @this._parent._owningThreadId = oldThreadId;
+                    if (@this._parent._reentrances == 0)
                     {
-                        Interlocked.Decrement(ref @this._parent._reentrances);
-                        @this._parent._owningId = oldId;
-                        @this._parent._owningThreadId = oldThreadId;
-                        if (@this._parent._reentrances == 0)
+                        // The owning thread is always the same so long as we
+                        // are in a nested stack call. We reset the owning id
+                        // only when the lock is fully unlocked.
+                        @this._parent._owningId = UnlockedId;
+                        @this._parent._owningThreadId = (int)UnlockedId;
+                        if (@this._parent._retry.CurrentCount == 0)
                         {
-                            // The owning thread is always the same so long as we
-                            // are in a nested stack call. We reset the owning id
-                            // only when the lock is fully unlocked.
-                            @this._parent._owningId = UnlockedId;
-                            @this._parent._owningThreadId = (int)UnlockedId;
-                            if (@this._parent._retry.CurrentCount == 0)
-                            {
-                                @this._parent._retry.Release();
-                            }
+                            @this._parent._retry.Release();
                         }
                     }
-                    finally
-                    {
-                        @this._parent._reentrancy.Release();
-                    }
-                });
+                }
+                finally
+                {
+                    @this._parent._reentrancy.Release();
+                }
             }
         }
 
