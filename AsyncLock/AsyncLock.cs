@@ -273,7 +273,7 @@ namespace NeoSmart.AsyncLock
                     }
 
                     // We can go in
-                    Interlocked.Increment(ref _parent._reentrances);
+                    _parent._reentrances += 1;
                     result = true;
                     return result;
                 }
@@ -302,7 +302,7 @@ namespace NeoSmart.AsyncLock
                 @this._parent._reentrancy.Wait();
                 try
                 {
-                    Interlocked.Decrement(ref @this._parent._reentrances);
+                    @this._parent._reentrances -= 1;
                     @this._parent._owningId = oldId;
                     @this._parent._owningThreadId = oldThreadId;
                     if (@this._parent._reentrances == 0)
