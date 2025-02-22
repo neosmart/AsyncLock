@@ -312,10 +312,12 @@ namespace NeoSmart.AsyncLock
                         // only when the lock is fully unlocked.
                         @this._parent._owningId = UnlockedId;
                         @this._parent._owningThreadId = (int)UnlockedId;
-                        if (@this._parent._retry.CurrentCount == 0)
-                        {
-                            @this._parent._retry.Release();
-                        }
+                    }
+                    // We can't place this within the _reentrances == 0 block above because we might
+                    // still need to notify a parallel reentrant task to wake. I think.
+                    if (@this._parent._retry.CurrentCount == 0)
+                    {
+                        @this._parent._retry.Release();
                     }
                 }
                 finally
@@ -401,7 +403,7 @@ namespace NeoSmart.AsyncLock
                 }).Unwrap();
         }
 
-        // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
+        // Make sure InnerLock.TryLockAsync() does not use await, because an async function triggers a snapshot of
         // the AsyncLocal value.
         public Task<bool> TryLockAsync(Action callback, CancellationToken cancel)
         {
