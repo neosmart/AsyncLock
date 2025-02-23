@@ -75,14 +75,17 @@ namespace NeoSmart.AsyncLock
                     {
                         break;
                     }
-                    _parent._reentrancy.Release();
                     // We need to wait for someone to leave the lock before trying again.
-                    await _parent._retry.WaitAsync(ct);
+                    // We need to "atomically" obtain _retry and release _reentrancy, but there
+                    // is no equivalent to a condition variable. Instead, we call *but don't await*
+                    // _retry.WaitAsync(), then release the reentrancy lock, *then* await the saved task.
+                    var waitTask = _parent._retry.WaitAsync(ct);
+                    _parent._reentrancy.Release();
+                    await waitTask;
                 }
                 // Reset the owning thread id after all await calls have finished, otherwise we
                 // could be resumed on a different thread and set an incorrect value.
                 _parent._owningThreadId = ThreadId;
-                // In case of !synchronous and success, TryEnter() does not release the reentrancy lock
                 _parent._reentrancy.Release();
                 return this;
             }
@@ -98,7 +101,6 @@ namespace NeoSmart.AsyncLock
                         // Reset the owning thread id after all await calls have finished, otherwise we
                         // could be resumed on a different thread and set an incorrect value.
                         _parent._owningThreadId = ThreadId;
-                        // In case of !synchronous and success, TryEnter() does not release the reentrancy lock
                         _parent._reentrancy.Release();
                         return this;
                     }
@@ -119,7 +121,6 @@ namespace NeoSmart.AsyncLock
                         // Reset the owning thread id after all await calls have finished, otherwise we
                         // could be resumed on a different thread and set an incorrect value.
                         _parent._owningThreadId = ThreadId;
-                        // In case of !synchronous and success, TryEnter() does not release the reentrancy lock
                         _parent._reentrancy.Release();
                         return this;
                     }
@@ -128,7 +129,15 @@ namespace NeoSmart.AsyncLock
                     now = DateTimeOffset.UtcNow;
                     remainder -= now - last;
                     last = now;
-                    if (remainder < TimeSpan.Zero || !await _parent._retry.WaitAsync(remainder))
+                    if (remainder < TimeSpan.Zero)
+                    {
+                        _parent._reentrancy.Release();
+                        return null;
+                    }
+
+                    var waitTask = _parent._retry.WaitAsync(remainder);
+                    _parent._reentrancy.Release();
+                    if (!await waitTask)
                     {
                         return null;
                     }
@@ -153,8 +162,9 @@ namespace NeoSmart.AsyncLock
                             break;
                         }
                         // We need to wait for someone to leave the lock before trying again.
+                        var waitTask = _parent._retry.WaitAsync(cancel);
                         _parent._reentrancy.Release();
-                        await _parent._retry.WaitAsync(cancel);
+                        await waitTask;
                     }
                 }
                 catch (OperationCanceledException)
@@ -165,7 +175,6 @@ namespace NeoSmart.AsyncLock
                 // Reset the owning thread id after all await calls have finished, otherwise we
                 // could be resumed on a different thread and set an incorrect value.
                 _parent._owningThreadId = ThreadId;
-                // In case of !synchronous and success, TryEnter() does not release the reentrancy lock
                 _parent._reentrancy.Release();
                 return this;
             }
@@ -180,9 +189,12 @@ namespace NeoSmart.AsyncLock
                         _parent._reentrancy.Release();
                         break;
                     }
-                    _parent._reentrancy.Release();
                     // We need to wait for someone to leave the lock before trying again.
-                    _parent._retry.Wait(cancellationToken);
+                    var waitTask = _parent._retry.WaitAsync(cancellationToken);
+                    _parent._reentrancy.Release();
+                    // This should be safe since the task we are awaiting doesn't need to make progress
+                    // itself to complete - it will be completed by another thread altogether. cf SemaphoreSlim internals.
+                    waitTask.GetAwaiter().GetResult();
                 }
                 return this;
             }
@@ -215,12 +227,14 @@ namespace NeoSmart.AsyncLock
                         _parent._reentrancy.Release();
                         return this;
                     }
-                    _parent._reentrancy.Release();
 
                     now = DateTimeOffset.UtcNow;
                     remainder -= now - last;
                     last = now;
-                    if (!_parent._retry.Wait(remainder))
+
+                    var waitTask = _parent._retry.WaitAsync(remainder);
+                    _parent._reentrancy.Release();
+                    if (!waitTask.GetAwaiter().GetResult())
                     {
                         return null;
                     }
@@ -297,6 +311,8 @@ namespace NeoSmart.AsyncLock
                     }
                     // We can't place this within the _reentrances == 0 block above because we might
                     // still need to notify a parallel reentrant task to wake. I think.
+                    // This should not be a race condition since we only wait on _retry with _reentrancy locked,
+                    // then release _reentrancy so the Dispose() call can obtain it to signal _retry in a big hack.
                     if (@this._parent._retry.CurrentCount == 0)
                     {
                         @this._parent._retry.Release();
