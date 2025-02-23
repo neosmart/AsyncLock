@@ -68,8 +68,14 @@ namespace NeoSmart.AsyncLock
 
             internal async Task<IDisposable> ObtainLockAsync(CancellationToken ct = default)
             {
-                while (!await TryEnterAsync(ct))
+                while (true)
                 {
+                    await _parent._reentrancy.WaitAsync(ct);
+                    if (InnerTryEnter(synchronous: false))
+                    {
+                        break;
+                    }
+                    _parent._reentrancy.Release();
                     // We need to wait for someone to leave the lock before trying again.
                     await _parent._retry.WaitAsync(ct);
                 }
@@ -86,7 +92,8 @@ namespace NeoSmart.AsyncLock
                 // In case of zero-timeout, don't even wait for protective lock contention
                 if (timeout == TimeSpan.Zero)
                 {
-                    if (await TryEnterAsync(timeout))
+                    _parent._reentrancy.Wait(timeout);
+                    if (InnerTryEnter(synchronous: false))
                     {
                         // Reset the owning thread id after all await calls have finished, otherwise we
                         // could be resumed on a different thread and set an incorrect value.
@@ -95,6 +102,7 @@ namespace NeoSmart.AsyncLock
                         _parent._reentrancy.Release();
                         return this;
                     }
+                    _parent._reentrancy.Release();
                     return null;
                 }
 
@@ -105,7 +113,8 @@ namespace NeoSmart.AsyncLock
                 // We need to wait for someone to leave the lock before trying again.
                 while (remainder > TimeSpan.Zero)
                 {
-                    if (await TryEnterAsync(remainder))
+                    await _parent._reentrancy.WaitAsync(remainder);
+                    if (InnerTryEnter(synchronous: false))
                     {
                         // Reset the owning thread id after all await calls have finished, otherwise we
                         // could be resumed on a different thread and set an incorrect value.
@@ -114,6 +123,7 @@ namespace NeoSmart.AsyncLock
                         _parent._reentrancy.Release();
                         return this;
                     }
+                    _parent._reentrancy.Release();
 
                     now = DateTimeOffset.UtcNow;
                     remainder -= now - last;
@@ -135,9 +145,15 @@ namespace NeoSmart.AsyncLock
             {
                 try
                 {
-                    while (!await TryEnterAsync(cancel))
+                    while (true)
                     {
+                        await _parent._reentrancy.WaitAsync(cancel);
+                        if (InnerTryEnter(synchronous: false))
+                        {
+                            break;
+                        }
                         // We need to wait for someone to leave the lock before trying again.
+                        _parent._reentrancy.Release();
                         await _parent._retry.WaitAsync(cancel);
                     }
                 }
@@ -156,8 +172,15 @@ namespace NeoSmart.AsyncLock
 
             internal IDisposable ObtainLock(CancellationToken cancellationToken)
             {
-                while (!TryEnter())
+                while (true)
                 {
+                    _parent._reentrancy.Wait(cancellationToken);
+                    if (InnerTryEnter(synchronous: true))
+                    {
+                        _parent._reentrancy.Release();
+                        break;
+                    }
+                    _parent._reentrancy.Release();
                     // We need to wait for someone to leave the lock before trying again.
                     _parent._retry.Wait(cancellationToken);
                 }
@@ -169,10 +192,13 @@ namespace NeoSmart.AsyncLock
                 // In case of zero-timeout, don't even wait for protective lock contention
                 if (timeout == TimeSpan.Zero)
                 {
-                    if (TryEnter(timeout))
+                    _parent._reentrancy.Wait(timeout);
+                    if (InnerTryEnter(synchronous: true))
                     {
+                        _parent._reentrancy.Release();
                         return this;
                     }
+                    _parent._reentrancy.Release();
                     return null;
                 }
 
@@ -183,10 +209,13 @@ namespace NeoSmart.AsyncLock
                 // We need to wait for someone to leave the lock before trying again.
                 while (remainder > TimeSpan.Zero)
                 {
-                    if (TryEnter(remainder))
+                    _parent._reentrancy.Wait(remainder);
+                    if (InnerTryEnter(synchronous: true))
                     {
+                        _parent._reentrancy.Release();
                         return this;
                     }
+                    _parent._reentrancy.Release();
 
                     now = DateTimeOffset.UtcNow;
                     remainder -= now - last;
@@ -204,88 +233,43 @@ namespace NeoSmart.AsyncLock
                 return null;
             }
 
-            private async Task<bool> TryEnterAsync(CancellationToken cancel = default)
-            {
-                await _parent._reentrancy.WaitAsync(cancel);
-                return InnerTryEnter();
-            }
-
-            private async Task<bool> TryEnterAsync(TimeSpan timeout)
-            {
-                if (!await _parent._reentrancy.WaitAsync(timeout))
-                {
-                    return false;
-                }
-
-                return InnerTryEnter();
-            }
-
-            private bool TryEnter()
-            {
-                _parent._reentrancy.Wait();
-                return InnerTryEnter(true /* synchronous */);
-            }
-
-            private bool TryEnter(TimeSpan timeout)
-            {
-                if (!_parent._reentrancy.Wait(timeout))
-                {
-                    return false;
-                }
-                return InnerTryEnter(true /* synchronous */);
-            }
-
             private bool InnerTryEnter(bool synchronous = false)
             {
                 bool result = false;
-                try
+                if (synchronous)
                 {
-                    if (synchronous)
+                    if (_parent._owningThreadId == UnlockedId)
                     {
-                        if (_parent._owningThreadId == UnlockedId)
-                        {
-                            _parent._owningThreadId = ThreadId;
-                        }
-                        else if (_parent._owningThreadId != ThreadId)
-                        {
-                            return false;
-                        }
+                        _parent._owningThreadId = ThreadId;
+                    }
+                    else if (_parent._owningThreadId != ThreadId)
+                    {
+                        return false;
+                    }
+                    _parent._owningId = AsyncLock.AsyncId;
+                }
+                else
+                {
+                    if (_parent._owningId == UnlockedId)
+                    {
                         _parent._owningId = AsyncLock.AsyncId;
+                    }
+                    else if (_parent._owningId != _oldId)
+                    {
+                        // Another thread currently owns the lock
+                        return false;
                     }
                     else
                     {
-                        if (_parent._owningId == UnlockedId)
-                        {
-                            _parent._owningId = AsyncLock.AsyncId;
-                        }
-                        else if (_parent._owningId != _oldId)
-                        {
-                            // Another thread currently owns the lock
-                            return false;
-                        }
-                        else
-                        {
-                            // Nested re-entrance
-                            _parent._owningId = AsyncId;
-                        }
+                        // Nested re-entrance
+                        _parent._owningId = AsyncId;
                     }
+                }
 
-                    // We can go in
-                    _parent._reentrances += 1;
-                    result = true;
-                    return result;
-                }
-                finally
-                {
-                    // We can't release this in case the lock was obtained because we still need to
-                    // set the owning thread id, but we may have been called asynchronously in which
-                    // case we could be currently running on a different thread than the one the
-                    // locking will ultimately conclude on.
-                    if (!result || synchronous)
-                    {
-                        _parent._reentrancy.Release();
-                    }
-                }
+                // We can go in
+                _parent._reentrances += 1;
+                result = true;
+                return result;
             }
 
             public void Dispose()
