@@ -70,7 +70,7 @@ namespace NeoSmart.AsyncLock
             {
                 while (true)
                 {
-                    await _parent._reentrancy.WaitAsync(ct);
+                    await _parent._reentrancy.WaitAsync(ct).ConfigureAwait(false);
                     if (InnerTryEnter(synchronous: false))
                     {
                         break;
@@ -79,7 +79,7 @@ namespace NeoSmart.AsyncLock
                     // We need to "atomically" obtain _retry and release _reentrancy, but there
                     // is no equivalent to a condition variable. Instead, we call *but don't await*
                     // _retry.WaitAsync(), then release the reentrancy lock, *then* await the saved task.
-                    var waitTask = _parent._retry.WaitAsync(ct);
+                    var waitTask = _parent._retry.WaitAsync(ct).ConfigureAwait(false);
                     _parent._reentrancy.Release();
                     await waitTask;
                 }
@@ -115,7 +115,7 @@ namespace NeoSmart.AsyncLock
                 // We need to wait for someone to leave the lock before trying again.
                 while (remainder > TimeSpan.Zero)
                 {
-                    await _parent._reentrancy.WaitAsync(remainder);
+                    await _parent._reentrancy.WaitAsync(remainder).ConfigureAwait(false);
                     if (InnerTryEnter(synchronous: false))
                     {
                         // Reset the owning thread id after all await calls have finished, otherwise we
@@ -135,7 +135,7 @@ namespace NeoSmart.AsyncLock
                         return null;
                     }
 
-                    var waitTask = _parent._retry.WaitAsync(remainder);
+                    var waitTask = _parent._retry.WaitAsync(remainder).ConfigureAwait(false);
                     _parent._reentrancy.Release();
                     if (!await waitTask)
                     {
@@ -156,13 +156,13 @@ namespace NeoSmart.AsyncLock
                 {
                     while (true)
                     {
-                        await _parent._reentrancy.WaitAsync(cancel);
+                        await _parent._reentrancy.WaitAsync(cancel).ConfigureAwait(false);
                         if (InnerTryEnter(synchronous: false))
                         {
                             break;
                         }
                         // We need to wait for someone to leave the lock before trying again.
-                        var waitTask = _parent._retry.WaitAsync(cancel);
+                        var waitTask = _parent._retry.WaitAsync(cancel).ConfigureAwait(false);
                         _parent._reentrancy.Release();
                         await waitTask;
                     }
