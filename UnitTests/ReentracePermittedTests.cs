@@ -51,5 +51,25 @@ namespace AsyncLockTests
                 await NestedFunctionAsync();
             }
         }
+
+        // Issue #18
+        [TestMethod]
+        //[Timeout(5)]
+        public async Task BackToBackReentrance()
+        {
+            var asyncLock = new AsyncLock();
+            async Task InnerFunctionAsync()
+            {
+                using (await asyncLock.LockAsync())
+                {
+                    //
+                }
+            }
+            using (await asyncLock.LockAsync())
+            {
+                await InnerFunctionAsync();
+                await InnerFunctionAsync();
+            }
+        }
     }
 }
