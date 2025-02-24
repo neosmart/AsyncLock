@@ -395,8 +395,8 @@ namespace NeoSmart.AsyncLock
                             }
 
                             return true;
-                        });
-                }).Unwrap();
+                        }, TaskScheduler.Default);
+                }, TaskScheduler.Default).Unwrap();
         }
 
         // Make sure InnerLock.TryLockAsync() does not use await, because an async function triggers a snapshot of
@@ -428,7 +428,7 @@ namespace NeoSmart.AsyncLock
                         disposableLock.Dispose();
                     }
                     return true;
-                });
+                }, TaskScheduler.Default);
         }
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
@@ -462,8 +462,8 @@ namespace NeoSmart.AsyncLock
                             }
 
                             return true;
-                        });
-                }).Unwrap();
+                        }, TaskScheduler.Default);
+                }, TaskScheduler.Default).Unwrap();
         }
 
         public IDisposable Lock(CancellationToken cancellationToken = default)
