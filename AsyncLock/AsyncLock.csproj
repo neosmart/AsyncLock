@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <RootNamespace>NeoSmart.AsyncLock</RootNamespace>
     <PackageId>NeoSmart.AsyncLock</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -30,7 +31,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>AsyncLock.snk</AssemblyOriginatorKeyFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
