@@ -1,0 +1,34 @@
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        dotnet: [ '8.0', '9.0' ]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      id: stepid
+      with:
+        dotnet-version: ${{ matrix.dotnet }}
+    # By default, tests will be executed under the latest installed version!
+    - name: Create temporary global.json
+      run: echo '{"sdk":{"version":"${{steps.stepid.outputs.dotnet-version}}"}}' > ./global.json
+    - name: Restore packages
+      run: dotnet restore -p:TargetFrameworks="net${{ matrix.dotnet }}" -p:LangVersion="latest"
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release -p:TargetFrameworks="net${{ matrix.dotnet }}" -p:LangVersion="latest" --verbosity normal
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal -p:TargetFrameworks="net${{ matrix.dotnet }}" -p:LangVersion="latest"
