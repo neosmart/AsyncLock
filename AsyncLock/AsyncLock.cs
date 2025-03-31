@@ -64,11 +64,11 @@ namespace NeoSmart.AsyncLock
 #endif
             }
 
-            internal async Task<IDisposable> ObtainLockAsync(CancellationToken ct = default)
+            internal async Task<IDisposable> ObtainLockAsync(CancellationToken cancellationToken = default)
             {
                 while (true)
                 {
-                    await _parent._reentrancy.WaitAsync(ct).ConfigureAwait(false);
+                    await _parent._reentrancy.WaitAsync(cancellationToken).ConfigureAwait(false);
                     if (InnerTryEnter(synchronous: false))
                     {
                         break;
@@ -77,7 +77,7 @@ namespace NeoSmart.AsyncLock
                     // We need to "atomically" obtain _retry and release _reentrancy, but there
                     // is no equivalent to a condition variable. Instead, we call *but don't await*
                     // _retry.WaitAsync(), then release the reentrancy lock, *then* await the saved task.
-                    var waitTask = _parent._retry.WaitAsync(ct).ConfigureAwait(false);
+                    var waitTask = _parent._retry.WaitAsync(cancellationToken).ConfigureAwait(false);
                     _parent._reentrancy.Release();
                     await waitTask;
                 }
@@ -148,19 +148,19 @@ namespace NeoSmart.AsyncLock
                 return null;
             }
 
-            internal async Task<IDisposable?> TryObtainLockAsync(CancellationToken cancel)
+            internal async Task<IDisposable?> TryObtainLockAsync(CancellationToken cancellationToken = default)
             {
                 try
                 {
                     while (true)
                     {
-                        await _parent._reentrancy.WaitAsync(cancel).ConfigureAwait(false);
+                        await _parent._reentrancy.WaitAsync(cancellationToken).ConfigureAwait(false);
                         if (InnerTryEnter(synchronous: false))
                         {
                             break;
                         }
                         // We need to wait for someone to leave the lock before trying again.
-                        var waitTask = _parent._retry.WaitAsync(cancel).ConfigureAwait(false);
+                        var waitTask = _parent._retry.WaitAsync(cancellationToken).ConfigureAwait(false);
                         _parent._reentrancy.Release();
                         await waitTask;
                     }
@@ -177,7 +177,7 @@ namespace NeoSmart.AsyncLock
                 return this;
             }
 
-            internal IDisposable ObtainLock(CancellationToken cancellationToken)
+            internal IDisposable ObtainLock(CancellationToken cancellationToken = default)
             {
                 while (true)
                 {
@@ -325,11 +325,11 @@ namespace NeoSmart.AsyncLock
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
         // the AsyncLocal value.
-        public Task<IDisposable> LockAsync(CancellationToken ct = default)
+        public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
-            return @lock.ObtainLockAsync(ct);
+            return @lock.ObtainLockAsync(cancellationToken);
         }
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
@@ -401,12 +401,12 @@ namespace NeoSmart.AsyncLock
 
         // Make sure InnerLock.TryLockAsync() does not use await, because an async function triggers a snapshot of
         // the AsyncLocal value.
-        public Task<bool> TryLockAsync(Action callback, CancellationToken cancel)
+        public Task<bool> TryLockAsync(Action callback, CancellationToken cancellationToken)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
 
-            return @lock.TryObtainLockAsync(cancel)
+            return @lock.TryObtainLockAsync(cancellationToken)
                 .ContinueWith(state =>
                 {
                     if (state.Exception is AggregateException ex)
@@ -433,12 +433,12 @@ namespace NeoSmart.AsyncLock
 
         // Make sure InnerLock.LockAsync() does not use await, because an async function triggers a snapshot of
         // the AsyncLocal value.
-        public Task<bool> TryLockAsync(Func<Task> callback, CancellationToken cancel)
+        public Task<bool> TryLockAsync(Func<Task> callback, CancellationToken cancellationToken)
         {
             var @lock = new InnerLock(this, _asyncId.Value, ThreadId);
             _asyncId.Value = Interlocked.Increment(ref AsyncLock.AsyncStackCounter);
 
-            return @lock.TryObtainLockAsync(cancel)
+            return @lock.TryObtainLockAsync(cancellationToken)
                 .ContinueWith(state =>
                 {
                     if (state.Exception is AggregateException ex)
